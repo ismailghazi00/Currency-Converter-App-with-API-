@@ -1,9 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-
-import '../module/data_class.dart';
 //we must add "http:" in pubspec.yml and import the packeage "import 'package:http/http.dart' as http;"
+import '../module/classdata.dart';
+import '../widgets/currency_tile_widget.dart';
+// import 'package:intl/intl.dart';
+// import 'package:dropdown_search/dropdown_search.dart';
+// import '../module/enum_list.dart';
 
 class CurencyListMainUI extends StatefulWidget {
   const CurencyListMainUI({super.key});
@@ -15,9 +18,9 @@ class CurencyListMainUI extends StatefulWidget {
 class _CurencyListMainUIState extends State<CurencyListMainUI> {
 //All vareables class will come here
   Currency currency = Currency();
-  Rates rates = Rates();
-  String? SalactedbasCoed;
-  var cityTextFieldControler = TextEditingController();
+  Rates rate = Rates();
+  TextEditingController currencyTextFieldControler = TextEditingController();
+  String currencySearchedName = 'usd';
 
   @override
   void initState() {
@@ -30,9 +33,9 @@ class _CurencyListMainUIState extends State<CurencyListMainUI> {
     http.Response response =
         //we first save the data in virable response of data type http.Response by using funcation http.get
         //http.get require Uri.parse and this funcation need String url
-        await http.get(Uri.parse("https://open.er-api.com/v6/latest/pkr"));
+        await http.get(Uri.parse(
+            "https://open.er-api.com/v6/latest/$currencySearchedName"));
     //then we wil put this funcation in initState to get data at avery re starte/ after build screen
-    print(response.body);
     //response.body hold all the data
 
     setState(() {
@@ -60,76 +63,93 @@ class _CurencyListMainUIState extends State<CurencyListMainUI> {
             child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
                 child: Column(children: [
+                  const SizedBox(height: 10),
                   Text("Currency Converter",
                       style: Theme.of(context).textTheme.bodyMedium),
-                  TextField(
-                      decoration: textFieldCustomDecuration(
-                          'Search for Your Currency')),
+                  const SizedBox(height: 10),
+                  SizedBox(
+                    height: 40,
+                    child: TextField(
+                        //-----------------------------------------Search Text Field
+                        controller: currencyTextFieldControler,
+                        //on change creat a olot truble for me, so if using controller ther is no need to use on change
+                        //controller shoul handel on change activities by it self
+                        // onChanged: (v) {
+                        //   currencyTextFieldControler.text = v;
+                        // },
+                        textDirection: TextDirection.ltr,
+                        textAlignVertical: TextAlignVertical.center,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          suffix: IconButton(
+                              padding: const EdgeInsets.only(top: 10),
+                              onPressed: () {
+                                setState(() {
+                                  currencySearchedName =
+                                      currencyTextFieldControler.text;
+                                  getCurrencyDataFromAPI();
+                                  currencyTextFieldControler.clear();
+                                });
+                              },
+                              icon:
+                                  const Icon(Icons.send, color: Colors.white)),
+                          filled: true,
+                          fillColor: const Color(0xff212436),
+                          border: const OutlineInputBorder(),
+                          enabledBorder: const OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30)),
+                              borderSide: BorderSide.none),
+                          focusedBorder: const OutlineInputBorder(
+                              borderRadius:
+                                  BorderRadius.all(Radius.circular(30)),
+                              borderSide: BorderSide.none),
+                          hintText: 'Search for Your Currency type',
+                          hintStyle: Theme.of(context).textTheme.bodySmall,
+                        )),
+                  ),
+                  const SizedBox(height: 20),
                   Text("Curent Currency",
                       style: Theme.of(context).textTheme.bodySmall),
-                  Text(currency.baseCode.toString(),
+                  Text('${currency.baseCode}',
                       style: Theme.of(context).textTheme.bodyLarge),
                   Container(
-                    decoration: BoxDecoration(
-                        color: const Color(0xff2F2F34),
-                        borderRadius: BorderRadius.circular(30)),
-                    child: Text("Thu, 20 Jul 2023",
-                        style: Theme.of(context).textTheme.bodySmall),
-                  ),
+                      decoration: BoxDecoration(
+                          color: const Color(0xff2F2F34),
+                          borderRadius: BorderRadius.circular(30)),
+                      child: Text(
+                          // 'last update on${styleDateandTime(currency.timeLastUpdate)}',
+                          '${currency.timeLastUpdate?.replaceAll('+0000', "")}',
+                          style: Theme.of(context).textTheme.bodySmall)),
+                  const SizedBox(height: 20),
+                  // DropdownSearch(
+                  //   dropdownDecoratorProps: DropDownDecoratorProps(
+                  //     dropdownSearchDecoration: InputDecoration(
+                  //         label: Text(
+                  //           'Country names',
+                  //           style: Theme.of(context).textTheme.titleMedium,
+                  //         ),
+                  //         filled: true,
+                  //         fillColor: const Color(0xff2F2F34),
+                  //         suffixIconColor: Colors.white,
+
+                  //         ),
+                  //   ),
+                  //   items: currencyNamesList,
+                  // ),
                   Expanded(
                     child: ListView.builder(
-                        itemCount: rates.value?.length == null
-                            ? 10
-                            : rates.value!.length,
+                        itemCount:
+                            currency.ratesList.length, //rate.ratesList.length,
                         itemBuilder: ((context, index) {
-                          return Column(
-                            children: [
-                              SizedBox(
-                                height: 45,
-                                child: Row(children: [
-                                  const CircleAvatar(
-                                      backgroundColor: Color(0xff2A3547),
-                                      foregroundImage: AssetImage(
-                                          "assets/CurrencyConverterIcon.png")),
-                                  Text(
-                                    currency.rates!.key.toString(),
-                                    style:
-                                        Theme.of(context).textTheme.titleMedium,
-                                  ),
-                                  const Spacer(),
-                                  Text(
-                                    currency.rates!.value.toString(),
-                                    style:
-                                        Theme.of(context).textTheme.titleSmall,
-                                  )
-                                ]),
-                              ),
-                              const Divider(
-                                color: Color(0xff212436),
-                              )
-                            ],
-                          );
+                          // return Container(
+                          //     child: Text(
+                          //         '${currency.ratesList[index].currancyName}'));
+                          return CurrencyTileWidget(
+                              currency: currency, index: index);
                         })),
                   ),
-                  const SizedBox(
-                    height: 10,
-                  )
+                  const SizedBox(height: 10)
                 ]))));
-  }
-
-  InputDecoration textFieldCustomDecuration(String hinttext) {
-    return InputDecoration(
-      filled: true,
-      fillColor: const Color(0xff212436),
-      border: const OutlineInputBorder(),
-      enabledBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(30)),
-          borderSide: BorderSide.none),
-      focusedBorder: const OutlineInputBorder(
-          borderRadius: BorderRadius.all(Radius.circular(30)),
-          borderSide: BorderSide.none),
-      hintText: hinttext,
-      hintStyle: Theme.of(context).textTheme.bodySmall,
-    );
   }
 }
